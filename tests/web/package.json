@@ -1,0 +1,30 @@
+{
+  "name": "@app/web-tests",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@app/eslint-config": "workspace:*",
+    "@app/tsconfig": "workspace:*",
+    "@cloudflare/workers-types": "^5.20261006.1",
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-pgvector": "0.0.9",
+    "@opennextjs/cloudflare": "^1.20.11",
+    "@saas/db": "workspace:*",
+    "@types/node": "^22.9.0",
+    "clsx": "2.1.1",
+    "drizzle-orm": "0.38.4",
+    "nanoid": "5.1.6",
+    "postgres": "3.4.7",
+    "tailwind-merge": "2.6.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4",
+    "zod": "3.25.76"
+  }
+}

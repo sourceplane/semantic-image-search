@@ -1,0 +1,148 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: web
+  description: Vercel's Semantic Image Search (Next.js on Cloudflare Workers + Static Assets via @opennextjs/cloudflare, Workers AI describing and embedding the images, pgvector on Supabase through Hyperdrive, the images in R2 and the search cache in KV, per environment)
+spec:
+  type: cloudflare-workers-assets-turbo
+  lifecycle: production
+  owner: platform
+  # Its pages, attached to it in the workspace's catalog: what the Docs
+  # library shows for it, and what the catalog's docs and runbook checks read.
+  # Generated from what this manifest and its sources declare.
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture, title: Architecture }
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  # `app`, not `web`: a domain and a component share one name space in the
+  # catalog, and a domain called `web` hid this component from it.
+  domain: app
+  path: apps/web
+  # Its own lane per environment: the Next.js build is the longest job in the
+  # plan, and a shared lane would wait on it.
+  lane: isolated
+  # INFRA BEFORE APP, ENFORCED ON MAIN. A merge to main converges the whole
+  # product in one run: the Supabase project, then the Hyperdrive config over
+  # its database, then the migrations — pgvector, the images table with its
+  # embedding at Workers AI's 768 dimensions, row-level security — and, beside
+  # them, the R2 bucket the images live in and the KV namespace the search
+  # cache lives in; then this Worker. Its deploy reads the Hyperdrive id, the
+  # bucket's name and the namespace's id (WIRING_CLOUDFLARE_*_<ENV>, rendered
+  # into the HYPERDRIVE, IMAGES and CACHE bindings) and needs the schema
+  # applied, and a job resolves its secrets when it STARTS — so it waits on all
+  # four, `mode: enforced`, and the ids the applies lease-published are there.
+  # A pull request deploys nothing, so nothing on one waits: every edge is
+  # advisory there.
+  dependsOn:
+    - component: cloudflare-hyperdrive
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+    - component: db-migrate
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+    - component: cloudflare-r2
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+    - component: cloudflare-kv
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+  # The wiring documents the cloudflare-hyperdrive, cloudflare-r2 and
+  # cloudflare-kv roots lease-publish, one per deployed environment;
+  # tooling/wire/live.mjs picks this job's. Workers AI needs nothing here: the
+  # AI binding is the account the deploy targets, and no model key exists.
+  secretEnv:
+    WIRING_CLOUDFLARE_HYPERDRIVE_STAGE: "secret://semantic-image-search/semantic-image-search/stage/WIRING_CLOUDFLARE_HYPERDRIVE"
+    WIRING_CLOUDFLARE_HYPERDRIVE_PROD: "secret://semantic-image-search/semantic-image-search/prod/WIRING_CLOUDFLARE_HYPERDRIVE"
+    WIRING_CLOUDFLARE_R2_STAGE: "secret://semantic-image-search/semantic-image-search/stage/WIRING_CLOUDFLARE_R2"
+    WIRING_CLOUDFLARE_R2_PROD: "secret://semantic-image-search/semantic-image-search/prod/WIRING_CLOUDFLARE_R2"
+    WIRING_CLOUDFLARE_KV_STAGE: "secret://semantic-image-search/semantic-image-search/stage/WIRING_CLOUDFLARE_KV"
+    WIRING_CLOUDFLARE_KV_PROD: "secret://semantic-image-search/semantic-image-search/prod/WIRING_CLOUDFLARE_KV"
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+      - name: prod
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+
+    workspaceDir: ../..
+    appDir: .
+
+    turboFilter: "@app/web"
+    wranglerConfig: wrangler.jsonc
+
+    # @opennextjs/cloudflare emits a Worker entrypoint plus a static-assets
+    # directory bound via ASSETS — both deploy in one `wrangler deploy`.
+    workerEntrypoint: .open-next/worker.js
+    assetsDir: .open-next/assets
+
+    # Per-env worker name: semantic-image-search-web-{dev,stage,prod}.
+    workerName: semantic-image-search-web
+    environmentAwareWorkerName: true
+
+    # The account's workers.dev subdomain; exported to the smoke step as
+    # ${WORKERS_DEV_SUBDOMAIN} and used to build ${DEPLOYED_URL}.
+    workersDevSubdomain: your-workers-subdomain
+
+    installCommand: pnpm install --frozen-lockfile
+    # wrangler.jsonc is COMMITTED — the fixture render, so the composition's
+    # structure check (`test -f wrangler.jsonc`, before the build, in a fresh
+    # checkout) passes. Stage and prod re-render it here, in their own job
+    # tree, from this environment's wiring documents, so the Worker binds the
+    # real Hyperdrive config, bucket and namespace; dev verifies with the
+    # fixture and has no wiring.
+    #
+    # The site's public origin (the Open Graph image link is absolute): the
+    # environment's SITE_URL when intent.yaml sets one (a custom domain), else
+    # its workers.dev URL. The subdomain is written out rather than read from
+    # ${WORKERS_DEV_SUBDOMAIN}: the composition exports that to the smoke step
+    # only, so the build would see it empty and bake
+    # `https://<worker>-<env>..workers.dev` into the link. ${ORUN_ENVIRONMENT}
+    # the runner sets for every step.
+    buildCommand: if [ "${ORUN_ENVIRONMENT}" != dev ]; then node ../../tooling/wire/live.mjs --template wrangler.template.jsonc --out wrangler.jsonc --components cloudflare-hyperdrive,cloudflare-r2,cloudflare-kv --env "${ORUN_ENVIRONMENT}"; fi && NEXT_PUBLIC_SITE_URL="${SITE_URL:-https://semantic-image-search-web-${ORUN_ENVIRONMENT}.your-workers-subdomain.workers.dev}" pnpm exec turbo run build --filter=@app/web
+
+    # Smoke — and the indexing, which upstream ran by hand from a laptop
+    # (its upload, generate-metadata and embed-and-save scripts). After
+    # `wrangler deploy`:
+    #   1. the page renders (its search box is in the page);
+    #   2. POST /api/index, until nothing remains: the Worker seeds the sample
+    #      images into its bucket, and describes and embeds — through its own
+    #      AI binding, into the database through Hyperdrive — every image whose
+    #      R2 version the index has not seen, four per request; a deploy that
+    #      changed no image describes nothing. Each answer must be "ok":true —
+    #      an image the model failed on fails the smoke;
+    #   3. /api/health answers ok with images in the index: the database
+    #      reachable and migrated, the column at the embedding model's size.
+    # No search is run. Each response is buffered before grep so an early
+    # match cannot SIGPIPE curl.
+    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q 'placeholder=\"Search...\"' && i=0 && while :; do indexed=$(curl -sf -X POST \"${DEPLOYED_URL}/api/index\") || { echo \"index: ${indexed}\"; exit 1; }; echo \"${indexed}\" | grep -q '\"ok\":true' || { echo \"index: ${indexed}\"; exit 1; }; echo \"${indexed}\" | grep -q '\"remaining\":0' && break; i=$((i+1)); [ \"$i\" -lt 30 ] || { echo \"index: still ${indexed}\"; exit 1; }; done && health=$(curl -sf \"${DEPLOYED_URL}/api/health\") && echo \"${health}\" | grep -q '\"ok\":true' && ! echo \"${health}\" | grep -q '\"images\":0'"
+  labels:
+    team: platform
+    layer: delivery
+    surface: web
+    runtime: cloudflare

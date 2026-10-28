@@ -10,7 +10,7 @@ product in one landing.**
 
 | | |
 |---|---|
-| Status | In progress — SI0 on main |
+| Status | In progress — SI1 on main: the site runs on Workers |
 | Upstream | [vercel-labs/semantic-image-search](https://github.com/vercel-labs/semantic-image-search) (Apache-2.0), Vercel's [Semantic Image Search](https://vercel.com/templates/next.js/semantic-image-search), at `94eaed2` |
 | Reference | [rag-chatbot](https://github.com/sourceplane/rag-chatbot) — Workers AI embeddings at 768 dimensions in Supabase's pgvector through Hyperdrive, migrations, db-migrate, row-level security; [blob-starter](https://github.com/sourceplane/blob-starter) — the R2 root and a delivery route; [kv-redis-starter](https://github.com/sourceplane/kv-redis-starter) — the KV root |
 | Key | `SI` |
