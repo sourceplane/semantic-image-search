@@ -1,0 +1,31 @@
+# The epic's declaration. metadata.name equals the directory name; metadata.key
+# is the task-key prefix this epic reserves (SI → SI-1, SI-2, …). Owner, target
+# date and health are the platform's — never written here.
+apiVersion: orun.io/v1
+kind: Epic
+metadata:
+  name: semantic-image-search
+  key: SI
+spec:
+  title: "Vercel's Semantic Image Search on Cloudflare Workers and Supabase"
+  summary: "Vercel's Semantic Image Search — images titled and described by a vision model, the descriptions embedded, and a search embedded and ranked by cosine similarity in pgvector beside a text match — run on Cloudflare Workers + Static Assets through @opennextjs/cloudflare, both models Workers AI's through the Worker's AI binding, the images in an R2 bucket the Worker serves, the searches cached in Workers KV, the vectors in a Supabase project's Postgres reached through Hyperdrive, all provisioned by Terraform; the schema applied by db-migrate and the images indexed by every deploy's smoke; and become an Orun baseline that takes a new product from nothing to live on stage and prod in one landing."
+  state: started
+  milestones:
+    - name: "SI0 — the spec"
+      exitCriteria:
+        - "the repository is born with its intent, CI, tooling and spec index, and this doc set and the task contracts are on main"
+      tasks: [SI-1]
+    - name: "SI1 — the image search on Workers and Supabase"
+      exitCriteria:
+        - "apps/web is the template on Next.js 16.3.8, built by OpenNext into one Worker, its Postgres the HYPERDRIVE binding with a client per call, its images the IMAGES bucket, its cache the CACHE namespace"
+        - "both models are Workers AI's through the AI binding — Llama 4 Scout in JSON mode with upstream's prompt and schema, BGE base at 768 dimensions — with no vendor key and no gateway"
+        - "indexing is one idempotent pass on the Worker's bindings (POST /api/index) that seeds the sample images, skips what it has seen and drops what is gone; the deploy smoke runs it"
+        - "pgvector, the images table and row-level security are packages/db migrations, applied by db-migrate; the Supabase, Hyperdrive, R2 and KV roots provision stage and prod"
+        - "`pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` are green"
+      tasks: [SI-2]
+    - name: "SI2 — a baseline"
+      exitCriteria:
+        - "blueprint.yaml (the console card) and repo-blueprint.yaml (the build) take a new product from nothing to live and indexed on stage and prod in one landing, then record it"
+        - "a product built from it carries the product only, renamed throughout to its own name, repository, Worker, bucket, namespace, Supabase project and Hyperdrive config"
+        - "Baseline CI is green: contract tests, generated component docs, the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the end-to-end tier"
+      tasks: [SI-3]

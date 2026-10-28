@@ -1,0 +1,25 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SI-3
+  title: "A baseline"
+spec:
+  goal: The repository becomes an Orun baseline that takes a new semantic image search product from nothing to live and indexed on stage and prod in one landing, and records what went live
+  affects:
+    - blueprint.yaml
+    - repo-blueprint.yaml
+    - .baseline
+    - tooling/rebrand
+    - tooling/bootstrap
+    - hooks
+    - docs/phases
+    - ai/context
+    - testing
+    - .github/workflows/baseline.yml
+    - .github/workflows/tag.yml
+  doneWhen:
+    - the card and the build document agree (testing/manifest.test.sh), and the platform's card reader accepts the card
+    - a placed product carries the product only, renamed throughout (leak, placement)
+    - the end-to-end tier builds, migrates, dry-deploys and serves the product, indexes its samples through its own deploy smoke against a Workers AI stand-in, finds them by their descriptions, serves them from R2 and indexes nothing on a second pass
+    - Baseline CI is green on main
+  gates: []

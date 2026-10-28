@@ -1,0 +1,26 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SI-2
+  title: "The image search on Workers and Supabase"
+spec:
+  goal: Vercel's Semantic Image Search runs as one Cloudflare Worker, its images described and embedded by Workers AI, stored in R2, searched in a Supabase project's pgvector behind Hyperdrive and cached in Workers KV, the schema applied by db-migrate and the index built by the deploy
+  affects:
+    - apps/web
+    - packages/db
+    - infra/terraform/supabase
+    - infra/terraform/cloudflare-hyperdrive
+    - infra/terraform/cloudflare-r2
+    - infra/terraform/cloudflare-kv
+    - infra/db-migrate
+    - tests/web
+    - tests/db
+    - tooling/migrations
+  doneWhen:
+    - the template's page and search run on OpenNext, the database reached through the HYPERDRIVE binding with a client per call
+    - Llama 4 Scout describes an image in JSON mode with upstream's prompt and schema, and BGE base embeds at 768 dimensions, both through the AI binding; no OpenAI, no gateway
+    - POST /api/index seeds the samples into the bucket, indexes what it has not seen (by etag, then content hash), removes what is gone and moves the cache's generation; the smoke runs it until nothing remains
+    - the images are served from R2 at /images/<name> with their etags; searches are cached in KV under the index's generation
+    - pgvector, the images table with its HNSW index and row-level security are packages/db migrations
+    - pnpm typecheck, lint, test and build are green
+  gates: []
