@@ -9,7 +9,7 @@ metadata:
 spec:
   title: "Vercel's Semantic Image Search on Cloudflare Workers and Supabase"
   summary: "Vercel's Semantic Image Search — images titled and described by a vision model, the descriptions embedded, and a search embedded and ranked by cosine similarity in pgvector beside a text match — run on Cloudflare Workers + Static Assets through @opennextjs/cloudflare, both models Workers AI's through the Worker's AI binding, the images in an R2 bucket the Worker serves, the searches cached in Workers KV, the vectors in a Supabase project's Postgres reached through Hyperdrive, all provisioned by Terraform; the schema applied by db-migrate and the images indexed by every deploy's smoke; and become an Orun baseline that takes a new product from nothing to live on stage and prod in one landing."
-  state: started
+  state: completed
   milestones:
     - name: "SI0 — the spec"
       exitCriteria:

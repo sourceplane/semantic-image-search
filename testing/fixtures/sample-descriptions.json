@@ -1,0 +1,14 @@
+{
+  "bicycle.jpg": { "title": "Crimson Ride", "description": "A red bicycle stands on a grey brick street in the city." },
+  "city-night.jpg": { "title": "Moonlit Skyline", "description": "Tall towers with lit windows under a full moon at night." },
+  "coffee.jpg": { "title": "Morning Brew", "description": "A steaming cup of coffee rests on a white saucer." },
+  "forest.jpg": { "title": "Green Cathedral", "description": "Tall pine trees line a winding path through the forest." },
+  "fruit-bowl.jpg": { "title": "Orchard Still Life", "description": "Apples, bananas and oranges heaped in a blue bowl." },
+  "hot-air-balloons.jpg": { "title": "Rising Colours", "description": "Colourful hot air balloons float over green fields." },
+  "lighthouse.jpg": { "title": "Keeper of the Coast", "description": "A red and white lighthouse on a rocky cliff above the sea." },
+  "mountains.jpg": { "title": "Alpine Silence", "description": "Snowy mountain peaks rise under a clear blue sky." },
+  "pancakes.jpg": { "title": "Sunday Stack", "description": "A stack of pancakes with butter and syrup on a plate." },
+  "pizza.jpg": { "title": "Pepperoni Moment", "description": "A slice of pepperoni pizza with melted cheese on a wooden board." },
+  "sailboat.jpg": { "title": "Golden Hour Sail", "description": "A white sailboat glides across the sea at sunset." },
+  "sleeping-cat.jpg": { "title": "Afternoon Nap", "description": "An orange cat curled up asleep on a purple cushion." }
+}
