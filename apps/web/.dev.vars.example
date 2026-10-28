@@ -1,0 +1,6 @@
+# Local Worker secrets for `wrangler dev` / `opennextjs-cloudflare preview`.
+# Copy to .dev.vars (git-ignored). The app needs none: the database is the
+# HYPERDRIVE binding, the images the IMAGES bucket, the search cache the
+# CACHE namespace (all in wrangler.jsonc, local under `wrangler dev`), and
+# both models Workers AI's, through the AI binding — which reaches your
+# Cloudflare account after `wrangler login`.

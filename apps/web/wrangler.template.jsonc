@@ -1,0 +1,70 @@
+// wrangler.template.jsonc is the source and wrangler.jsonc is rendered from
+// it by tooling/wire: edit the template, never the render. Two renders:
+//
+//   - committed: the render from wiring.fixture.json (`pnpm run wire:fixture`),
+//     placeholder ids and names. `wrangler dev`, `next dev`, the dev verify
+//     lane and the composition's structure check (which runs BEFORE the build,
+//     in a fresh checkout) all read it, so it has to exist without a build.
+//     Edit this file and re-render; tests/web fails when the two disagree.
+//   - deployed: the stage and prod lanes re-render it inside their own job
+//     tree, before the build, from the wiring documents the
+//     `cloudflare-hyperdrive`, `cloudflare-r2` and `cloudflare-kv` Terraform
+//     roots lease-publish (WIRING_CLOUDFLARE_*_<ENV>, apps/web/component.yaml).
+//
+// The workers-assets composition deploys one environment per job with no
+// wrangler `--env`, so a placeholder token names the environment a render is
+// for.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "semantic-image-search-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // The Supabase project's Postgres, fronted by Hyperdrive: the images'
+  // titles, descriptions and embeddings (pgvector). lib/db/index.ts builds its
+  // client per call from env.HYPERDRIVE.connectionString (upstream read
+  // POSTGRES_URL through @vercel/postgres). Locally the binding points at the
+  // localConnectionString below: a Postgres with pgvector that packages/db's
+  // migrations have been applied to (README → Local development).
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "@@wiring(cloudflare-hyperdrive/__ENV__:hyperdrive_id)@@",
+      "localConnectionString": "postgres://postgres:postgres@localhost:5432/images"
+    }
+  ],
+  // The images themselves (upstream: Vercel Blob), one object per image under
+  // images/, served by the Worker at /images/<name>
+  // (app/images/[...key]/route.ts). The indexer seeds the sample images into
+  // it from the Worker's static assets (lib/ai/index-images.ts).
+  "r2_buckets": [
+    {
+      "binding": "IMAGES",
+      "bucket_name": "@@wiring(cloudflare-r2/__ENV__:r2_bucket_name)@@"
+    }
+  ],
+  // The search cache (upstream: Vercel KV): each query's results, keyed under
+  // the index's current generation so a newly indexed image is never hidden
+  // behind a cached answer (lib/db/api.ts).
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "@@wiring(cloudflare-kv/__ENV__:app_kv_id)@@"
+    }
+  ],
+  // Workers AI: the vision model that titles and describes each image and the
+  // embedding model its description and every query are embedded with
+  // (lib/ai/models.ts). Nothing to provision and no key: the binding is the
+  // Cloudflare account the Worker deploys into, billed to it (Workers AI's
+  // free allocation first). Locally it always reaches that account —
+  // `wrangler dev` and `next dev` ask you to `wrangler login` the first time a
+  // search or the indexer calls it.
+  "ai": {
+    "binding": "AI"
+  }
+}

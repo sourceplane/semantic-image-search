@@ -1,0 +1,62 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+
+metadata:
+  name: cloudflare-r2
+  description: Provisions the Cloudflare R2 bucket the app binds (stage and prod)
+  labels:
+    domain: infra
+    scope: app-object-store
+
+spec:
+  type: terraform
+  lifecycle: production
+  owner: platform
+  # Its pages, attached to it in the workspace's catalog: what the Docs
+  # library shows for it, and what the catalog's docs and runbook checks read.
+  # Generated from what this manifest and its sources declare.
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture, title: Architecture }
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  domain: infra
+
+  parameters:
+    orgName: sourceplane
+    stackName: cloudflare-r2
+    terraformDir: terraform
+    terraformVersion: "1.15.3"
+    # SEC-JOB: the wiring document (R2 bucket name) is lease-published
+    # post-apply; app deploys read it back as WIRING_CLOUDFLARE_R2_<ENV>.
+    secretOutputs: "WIRING_CLOUDFLARE_R2=wiring"
+
+  # The Cloudflare Terraform provider authenticates via the CLOUDFLARE_API_TOKEN
+  # env var, resolved by orun from the project-rung brokered secret — minted
+  # fresh per run from the r2-data template (Workers R2 Storage Write). NOT the
+  # deploy token: workers-deploy grants Workers Scripts and KV, and no R2, so
+  # it cannot create or list a bucket. Declared at component level because
+  # plan-only lanes refresh against the live Cloudflare API too, not just
+  # apply (adopt.tf lists the account's buckets at plan time).
+  secretEnv:
+    CLOUDFLARE_API_TOKEN: "secret://semantic-image-search/semantic-image-search/{{ .environment }}/CLOUDFLARE_R2_TOKEN"
+    # Non-secret connection fact (account-id template) — replaces the ambient
+    # CLOUDFLARE_ACCOUNT_ID / TF_VAR_cloudflare_account_id CI values.
+    CLOUDFLARE_ACCOUNT_ID: "secret://semantic-image-search/semantic-image-search/{{ .environment }}/CLOUDFLARE_ACCOUNT_ID"
+    TF_VAR_cloudflare_account_id: "secret://semantic-image-search/semantic-image-search/{{ .environment }}/CLOUDFLARE_ACCOUNT_ID"
+
+  subscribe:
+    environments:
+      - name: stage
+        profile: plan-only
+        profileRules:
+          - profile: apply
+            when:
+              triggerRef: github-push-main
+
+      - name: prod
+        profile: plan-only
+        profileRules:
+          - profile: apply
+            when:
+              triggerRef: github-push-main

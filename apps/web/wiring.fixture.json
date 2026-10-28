@@ -1,0 +1,22 @@
+{
+  "cloudflare-hyperdrive/stage": {
+    "hyperdrive_id": "00000000000000000000000000000001",
+    "hyperdrive_name": "stg-semantic-image-search-stage"
+  },
+  "cloudflare-hyperdrive/prod": {
+    "hyperdrive_id": "00000000000000000000000000000001",
+    "hyperdrive_name": "prod-semantic-image-search-prod"
+  },
+  "cloudflare-r2/stage": {
+    "r2_bucket_name": "stg-semantic-image-search-stage"
+  },
+  "cloudflare-r2/prod": {
+    "r2_bucket_name": "prod-semantic-image-search-prod"
+  },
+  "cloudflare-kv/stage": {
+    "app_kv_id": "00000000000000000000000000000001"
+  },
+  "cloudflare-kv/prod": {
+    "app_kv_id": "00000000000000000000000000000003"
+  }
+}
