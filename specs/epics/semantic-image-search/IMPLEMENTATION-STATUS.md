@@ -4,7 +4,7 @@
 |---|---|---|
 | SI0 — the spec | ✅ | SI-1 |
 | SI1 — the image search on Workers and Supabase | ✅ | SI-2 |
-| SI2 — a baseline | planned | SI-3 |
+| SI2 — a baseline | ✅ | SI-3, tagged `baseline-v1` |
 
 ## Departures from the upstream template
 
